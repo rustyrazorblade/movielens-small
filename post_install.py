@@ -4,7 +4,7 @@ from pandas import read_csv
 from cassandra.cqlengine.models import Model
 from cassandra.cqlengine.columns import *
 from cassandra.cqlengine.connection import set_session
-
+from cassandra.concurrent import execute_concurrent_with_args
 
 class Movie(Model):
     __table_name__ = 'movies'
@@ -54,17 +54,24 @@ def main(context):
 
     # user id | item id | rating | timestamp
     data = zf.open("ml-100k/u.data")
-    prepared = context.session.prepare("INSERT INTO ratings_by_movie (movie_id, user_id, rating, timestamp) VALUES (?, ?, ?, ?)")
-    ratings = read_csv(data, sep="|", header=None,
-                       names=["user_id", "movie_id", "rating", "timestamp"])
+    prepared = context.session.prepare("INSERT INTO ratings_by_movie (movie_id, user_id, rating, ts) VALUES (?, ?, ?, ?)")
+    prepared2 = context.session.prepare("INSERT INTO ratings_by_user (user_id, movie_id, name, rating, ts) VALUES (?, ?, ?, ?, ?)")
 
-    for r in ratings.itertuples():
+    names = ["user_id", "movie_id", "rating", "timestamp"]
+    ratings = read_csv(data, sep="\t", header=None, names=names)
+
+    i = 0
+    for row in ratings.itertuples():
+        context.session.execute_async(prepared, (row.movie_id, row.user_id, row.rating, row.timestamp))
         try:
-            context.session.execute(prepared, (r.movie_id, r.user_id, r.rating, r.timestamp))
-        except Exception as e:
-            print r, e
+            movie_name = items.iloc[row.movie_id]["name"]
+            context.session.execute_async(prepared2, (row.user_id, row.movie_id, movie_name, row.rating, row.timestamp))
+        except IndexError:
+            print "Could not find movie, probably an encoding issue from earlier, movie: ", row.movie_id
 
-
+        i += 1
+        if i % 1000 == 0:
+            context.feedback("{} items processed".format(i))
 
 if __name__ == "__main__":
     from cdm import install_local
