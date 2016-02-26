@@ -3,7 +3,6 @@ from pandas import read_csv
 
 from cassandra.cqlengine.models import Model
 from cassandra.cqlengine.columns import *
-from cassandra.cqlengine.management import sync_table
 from cassandra.cqlengine.connection import set_session
 
 
@@ -18,7 +17,6 @@ class Movie(Model):
 
 
 def main(context):
-    sync_table(Movie)
     context.feedback("Installing movielens")
     fp = context.download("http://files.grouplens.org/datasets/movielens/ml-100k.zip")
     zf = ZipFile(file=fp)
@@ -29,6 +27,7 @@ def main(context):
                             "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
                             "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"])
     for row in items.itertuples():
+        context.feedback(row.name)
         try:
             Movie.create(id=row.id, name=row.name.encode("utf-8"),
                          url=str(row.url))
