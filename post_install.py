@@ -3,8 +3,6 @@ from pandas import read_csv
 
 from cassandra.cqlengine.models import Model
 from cassandra.cqlengine.columns import *
-from cassandra.cqlengine.connection import set_session
-from cassandra.concurrent import execute_concurrent_with_args
 
 class Movie(Model):
     __table_name__ = 'movies'
