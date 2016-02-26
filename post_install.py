@@ -59,7 +59,11 @@ def main(context):
                        names=["user_id", "movie_id", "rating", "timestamp"])
 
     for r in ratings.itertuples():
-        context.session.execute(prepared, (r.movie_id, r.user_id, r.rating, r.timestamp))
+        try:
+            context.session.execute(prepared, (r.movie_id, r.user_id, r.rating, r.timestamp))
+        except Exception as e:
+            print r, e
+
 
 
 if __name__ == "__main__":

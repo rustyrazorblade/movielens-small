@@ -17,7 +17,7 @@ CREATE TABLE ratings_by_movie (
     movie_id int,
     user_id int,
     rating int,
-    timestamp int,
+    ts int,
     primary key(movie_id, user_id)
 );
 
@@ -26,6 +26,6 @@ CREATE TABLE ratings_by_user (
     movie_id int,
     name text,
     rating int,
-    timestamp int,
+    ts int,
     primary key (user_id, movie_id)
 );
