@@ -52,8 +52,14 @@ def main(context):
         except Exception as e:
             print user.id, e
 
+    # user id | item id | rating | timestamp
     data = zf.open("ml-100k/u.data")
-    # ratings = read_csv(data, )
+    prepared = context.session.prepare("INSERT INTO ratings_by_movie (movie_id, user_id, rating, timestamp) VALUES (?, ?, ?, ?)")
+    ratings = read_csv(data, sep="|", header=None,
+                       names=["user_id", "movie_id", "rating", "timestamp"])
+
+    for r in ratings.itertuples():
+        context.session.execute(prepared, (r.movie_id, r.user_id, r.rating, r.timestamp))
 
 
 if __name__ == "__main__":
