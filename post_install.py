@@ -15,6 +15,14 @@ class Movie(Model):
     url = Text()
     tags = Set(Text)
 
+class User(Model):
+    __table_name__ = "users"
+    id = Integer(primary_key=True)
+    age = Integer()
+    gender = Text()
+    occupation = Text()
+    zip = Text()
+
 
 def main(context):
     context.feedback("Installing movielens")
@@ -27,12 +35,24 @@ def main(context):
                             "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
                             "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"])
     for row in items.itertuples():
-        context.feedback(row.name)
+        # context.feedback(row.name)
         try:
             Movie.create(id=row.id, name=row.name.encode("utf-8"),
                          url=str(row.url))
         except Exception as e:
             print e, row
+    users = zf.open("ml-100k/u.user")
+    users = read_csv(users, sep="|", header=None,
+                     names=["id", "age", "gender", "occupation", "zip"])
+
+    for user in users.itertuples():
+        try:
+            User.create(id=user.id, age=user.age, gender=user.gender,
+                        occupation=user.occupation, zip=user.zip)
+        except Exception as e:
+            print user.id, e
+
+    data = zf.open("ml-100k/u.data")
 
 if __name__ == "__main__":
     from cdm import install_local
