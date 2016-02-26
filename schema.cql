@@ -12,3 +12,18 @@ CREATE TABLE users (
     occupation text,
     zip text
 );
+
+CREATE TABLE ratings_by_movie (
+    movie_id int,
+    user_id int,
+    rating int,
+    timestamp int
+);
+
+CREATE TABLE ratings_by_user (
+    user_id int,
+    movie_id int,
+    name text,
+    rating int,
+    timestamp int
+);

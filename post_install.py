@@ -29,7 +29,7 @@ def main(context):
     fp = context.download("http://files.grouplens.org/datasets/movielens/ml-100k.zip")
     zf = ZipFile(file=fp)
     tmp = zf.open("ml-100k/u.item")
-    items = read_csv(tmp, sep="|", header=None,
+    items = read_csv(tmp, sep="|", header=None, index_col=0,
                     names=[ "id", "name", "release_date", "video_release_date", "url", "unknown",
                             "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
                             "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
@@ -37,22 +37,24 @@ def main(context):
     for row in items.itertuples():
         # context.feedback(row.name)
         try:
-            Movie.create(id=row.id, name=row.name.encode("utf-8"),
+            Movie.create(id=row.Index, name=row.name.encode("utf-8"),
                          url=str(row.url))
         except Exception as e:
             print e, row
     users = zf.open("ml-100k/u.user")
     users = read_csv(users, sep="|", header=None,
-                     names=["id", "age", "gender", "occupation", "zip"])
+                     names=["id", "age", "gender", "occupation", "zip"], index_col=0)
 
     for user in users.itertuples():
         try:
-            User.create(id=user.id, age=user.age, gender=user.gender,
+            User.create(id=user.Index, age=user.age, gender=user.gender,
                         occupation=user.occupation, zip=user.zip)
         except Exception as e:
             print user.id, e
 
     data = zf.open("ml-100k/u.data")
+    # ratings = read_csv(data, )
+
 
 if __name__ == "__main__":
     from cdm import install_local
