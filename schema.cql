@@ -4,3 +4,11 @@ CREATE TABLE movies (
     url text,
     genres set<text>
 );
+
+CREATE TABLE users (
+    id int primary key,
+    age int,
+    gender text,
+    occupation text,
+    zip text
+);
