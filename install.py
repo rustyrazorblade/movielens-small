@@ -41,7 +41,7 @@ class MovieLensInstaller(Installer):
 
         ratings = self.zf.open("ml-100k/u.data")
         names = ["user_id", "movie_id", "rating", "timestamp"]
-        ratings = read_csv(ratings, sep="\t", header=None, names=names)
+        self.ratings = read_csv(ratings, sep="\t", header=None, names=names)
 
 
     def install_cassandra(self):
