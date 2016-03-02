@@ -71,6 +71,8 @@ def main(context):
         if i % 1000 == 0:
             context.feedback("{} items processed".format(i))
 
+    context.feedback("Done installing movielens-small")
+
 if __name__ == "__main__":
     from cdm import install_local
     install_local("movielens-small", main)

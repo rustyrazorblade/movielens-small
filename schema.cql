@@ -29,3 +29,4 @@ CREATE TABLE ratings_by_user (
     ts int,
     primary key (user_id, movie_id)
 );
+
