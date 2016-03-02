@@ -28,19 +28,18 @@ class MovieLensInstaller(Installer):
         context = self.context
         fp = context.download("http://files.grouplens.org/datasets/movielens/ml-100k.zip")
         self.zf = ZipFile(file=fp)
-        zf = self._zf
-        tmp = zf.open("ml-100k/u.item")
+        tmp = self.zf.open("ml-100k/u.item")
         self.movies = read_csv(tmp, sep="|", header=None, index_col=0,
                          names=[ "id", "name", "release_date", "video_release_date", "url", "unknown",
                                  "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
                                  "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
                                  "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"])
 
-        users = zf.open("ml-100k/u.user")
+        users = self.zf.open("ml-100k/u.user")
         self.users = read_csv(users, sep="|", header=None,
                          names=["id", "age", "gender", "occupation", "zip"], index_col=0)
 
-        ratings = zf.open("ml-100k/u.data")
+        ratings = self.zf.open("ml-100k/u.data")
         names = ["user_id", "movie_id", "rating", "timestamp"]
         ratings = read_csv(ratings, sep="\t", header=None, names=names)
 
