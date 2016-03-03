@@ -4,7 +4,6 @@ from pandas import read_csv
 from cdm.installer import Installer
 from movielens.models import Movie, User
 
-
 class MovieLensInstaller(Installer):
     def post_init(self):
         context = self.context
@@ -54,14 +53,26 @@ class MovieLensInstaller(Installer):
             context.session.execute_async(prepared, (row.movie_id, row.user_id, row.rating, row.timestamp))
             try:
                 movie_name = self.movies.iloc[row.movie_id]["name"]
-                context.session.execute_async(prepared2, (row.user_id, row.movie_id, movie_name, row.rating, row.timestamp))
+                future = context.session.execute_async(prepared2, (row.user_id, row.movie_id, movie_name, row.rating, row.timestamp))
             except IndexError:
                 print "Could not find movie, probably an encoding issue from earlier, movie: ", row.movie_id
 
             i += 1
             if i % 1000 == 0:
-                context.feedback("{} items processed".format(i))
+                future.result()
+                context.feedback("{} ratings processed".format(i))
 
+    def install_graph(self):
+        # create movies
+        session = self.context.session
+        from dse.graph import SimpleGraphStatement
+
+        statement = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', n)")
+        for movie in self.movies.itertuples():
+            try:
+                session.execute_graph(statement, {"n": movie.name})
+            except Exception as e:
+                print e, movie
 
 
 
