@@ -80,7 +80,6 @@ class MovieLensInstaller(Installer):
             if i % 1000 == 0:
                 context.feedback("{} items processed".format(i))
 
-        context.feedback("Done installing movielens-small")
 
 
 
