@@ -67,12 +67,20 @@ class MovieLensInstaller(Installer):
         session = self.context.session
         from dse.graph import SimpleGraphStatement
 
-        statement = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', n)")
+        movie_stmt = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', n)")
+        person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender)")
+
         for movie in self.movies.itertuples():
             try:
-                session.execute_graph(statement, {"n": movie.name})
+                session.execute_graph(movie_stmt, {"n": movie.name})
             except Exception as e:
                 print e, movie
 
 
+        for user in self.users.itertuples():
+            try:
+                args = {"age":user.age, "gender": user.gender}
+                session.execute_graph(person_stmt, args)
+            except Exception as e:
+                print args, e
 
