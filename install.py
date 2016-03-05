@@ -67,20 +67,67 @@ class MovieLensInstaller(Installer):
         session = self.context.session
         from dse.graph import SimpleGraphStatement
 
-        movie_stmt = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', n)")
-        person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender)")
+        schema = """import static com.datastax.bdp.graph.api.schema.VertexIndex.Type.MATERIALIZED
+                    def schema = graph.schema()
+                    schema.buildPropertyKey('id', Integer.class).add()
+                    schema.buildVertexLabel('movie').add()
+                    person = schema.buildVertexLabel('person').add()
+                    person.buildVertexIndex('byId').materialized().byPropertyKey('id').add()
+                     """
+
+        session.execute_graph(schema)
+
+        movie_stmt = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', name, 'id', movie_id)")
+        person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender, 'id', user_id)")
+
+        rate = """ f = g.V().hasLabel('person').has('id', user_id).next()
+                   second = g.V().hasLabel('movie').has('id', movie_id).next()
+                   f.addEdge("rated", second, "rating", rating)
+        """
+        rate_stmt = SimpleGraphStatement(rate)
+
+        rate2 = """g.V().hasLabel('person').has('id', user_id).as('a').
+                  V().hasLabel('movie').has('id','movie_id').as('b').
+                  addE("rated").property('rating', rating).from("a").to("b")"""
+
+        rate2_stmt = SimpleGraphStatement(rate2)
 
         for movie in self.movies.itertuples():
             try:
-                session.execute_graph(movie_stmt, {"n": movie.name})
+                params = {"name": movie.name,
+                          "movie_id": movie.Index}
+
+                session.execute_graph(movie_stmt, params)
             except Exception as e:
                 print e, movie
 
 
         for user in self.users.itertuples():
             try:
-                args = {"age":user.age, "gender": user.gender}
+                args = {"age":user.age,
+                        "gender": user.gender,
+                        "user_id": user.Index}
                 session.execute_graph(person_stmt, args)
             except Exception as e:
                 print args, e
+
+        i = 0
+        lim = 1000
+        import time
+        start = time.time()
+        for rating in self.ratings.itertuples():
+
+            params = {"user_id": rating.user_id,
+                      "movie_id": rating.movie_id,
+                      "rating": rating.rating}
+            try:
+                session.execute_graph(rate2_stmt, params)
+            except Exception as e:
+                print params, e
+            i += 1
+            if i == lim:
+                i = 0
+                total = time.time() - start
+                start = time.time()
+                print float(lim) / total, "per second"
 
