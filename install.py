@@ -70,12 +70,17 @@ class MovieLensInstaller(Installer):
         schema = """import static com.datastax.bdp.graph.api.schema.VertexIndex.Type.MATERIALIZED
                     def schema = graph.schema()
                     schema.buildPropertyKey('id', Integer.class).add()
-                    schema.buildVertexLabel('movie').add()
+
                     person = schema.buildVertexLabel('person').add()
-                    person.buildVertexIndex('byId').materialized().byPropertyKey('id').add()
+                    person.buildVertexIndex('user_id').materialized().byPropertyKey('id').add()
+
+                    movie = schema.buildVertexLabel('movie').add()
+                    movie.buildVertexIndex('movie_id').materialized().byPropertyKey('id').add()
                      """
 
         session.execute_graph(schema)
+
+        self.context.feedback("Schema finished")
 
         movie_stmt = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', name, 'id', movie_id)")
         person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender, 'id', user_id)")
@@ -87,7 +92,7 @@ class MovieLensInstaller(Installer):
         rate_stmt = SimpleGraphStatement(rate)
 
         rate2 = """g.V().hasLabel('person').has('id', user_id).as('a').
-                  V().hasLabel('movie').has('id','movie_id').as('b').
+                  V().hasLabel('movie').has('id',movie_id).as('b').
                   addE("rated").property('rating', rating).from("a").to("b")"""
 
         rate2_stmt = SimpleGraphStatement(rate2)
@@ -102,6 +107,7 @@ class MovieLensInstaller(Installer):
                 print e, movie
 
 
+        i = 0
         for user in self.users.itertuples():
             try:
                 args = {"age":user.age,
@@ -110,6 +116,9 @@ class MovieLensInstaller(Installer):
                 session.execute_graph(person_stmt, args)
             except Exception as e:
                 print args, e
+            i += 1
+            if i % 100 == 0:
+                print i
 
         i = 0
         lim = 1000
