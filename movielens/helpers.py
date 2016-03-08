@@ -6,3 +6,9 @@ def read_movies(fp):
                             "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
                             "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
                             "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"])
+
+def read_users(fp):
+    return read_csv(fp, sep="|", header=None,
+             names=["id", "age", "gender", "occupation", "zip"], index_col=0)
+
+

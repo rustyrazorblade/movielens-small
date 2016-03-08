@@ -3,6 +3,7 @@ from pandas import read_csv
 
 from cdm.installer import Installer
 from movielens.models import Movie, User
+from movielens.helpers import read_movies, read_users
 
 class MovieLensInstaller(Installer):
     def post_init(self):
@@ -10,15 +11,10 @@ class MovieLensInstaller(Installer):
         fp = context.download("http://files.grouplens.org/datasets/movielens/ml-100k.zip")
         self.zf = ZipFile(file=fp)
         tmp = self.zf.open("ml-100k/u.item")
-        self.movies = read_csv(tmp, sep="|", header=None, index_col=0,
-                         names=[ "id", "name", "release_date", "video_release_date", "url", "unknown",
-                                 "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
-                                 "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
-                                 "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"])
+        self.movies = read_movies(tmp)
 
         users = self.zf.open("ml-100k/u.user")
-        self.users = read_csv(users, sep="|", header=None,
-                         names=["id", "age", "gender", "occupation", "zip"], index_col=0)
+        self.users = read_users(users)
 
         ratings = self.zf.open("ml-100k/u.data")
         names = ["user_id", "movie_id", "rating", "timestamp"]
@@ -36,13 +32,14 @@ class MovieLensInstaller(Installer):
                              url=str(movie.url))
             except Exception as e:
                 print e, movie
-
+        context.feedback("Movies done")
         for user in self.users.itertuples():
             try:
                 User.create(id=user.Index, age=user.age, gender=user.gender,
                             occupation=user.occupation, zip=user.zip)
             except Exception as e:
-                print user.id, e
+                print user.Index, e
+        context.feedback("users done")
 
         # user id | item id | rating | timestamp
         prepared = context.session.prepare("INSERT INTO ratings_by_movie (movie_id, user_id, rating, ts) VALUES (?, ?, ?, ?)")
@@ -58,7 +55,7 @@ class MovieLensInstaller(Installer):
                 print "Could not find movie, probably an encoding issue from earlier, movie: ", row.movie_id
 
             i += 1
-            if i % 1000 == 0:
+            if i % 2500 == 0:
                 future.result()
                 context.feedback("{} ratings processed".format(i))
 
