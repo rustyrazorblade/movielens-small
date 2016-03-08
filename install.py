@@ -3,22 +3,17 @@ from pandas import read_csv
 
 from cdm.installer import Installer
 from movielens.models import Movie, User
-from movielens.helpers import read_movies, read_users
+from movielens.helpers import read_movies, read_users, get_zip, read_ratings
+
 
 class MovieLensInstaller(Installer):
     def post_init(self):
         context = self.context
-        fp = context.download("http://files.grouplens.org/datasets/movielens/ml-100k.zip")
-        self.zf = ZipFile(file=fp)
-        tmp = self.zf.open("ml-100k/u.item")
-        self.movies = read_movies(tmp)
 
-        users = self.zf.open("ml-100k/u.user")
-        self.users = read_users(users)
-
-        ratings = self.zf.open("ml-100k/u.data")
-        names = ["user_id", "movie_id", "rating", "timestamp"]
-        self.ratings = read_csv(ratings, sep="\t", header=None, names=names)
+        zfp = get_zip(context)
+        self.movies = read_movies(zfp)
+        self.users = read_users(zfp)
+        self.ratings = read_ratings(zfp)
 
 
     def install_cassandra(self):
