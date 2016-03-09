@@ -68,6 +68,10 @@ class MovieLensInstaller(Installer):
 
                     movie = schema.buildVertexLabel('movie').add()
                     movie.buildVertexIndex('movie_id').materialized().byPropertyKey('id').add()
+
+                    schema.buildPropertyKey('name', String.class).add()
+                    movie.buildVertexIndex('search').search().byPropertyKey('name', fullTextIndex()).add()
+
                      """
 
         session.execute_graph(schema)
