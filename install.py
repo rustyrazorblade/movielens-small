@@ -24,7 +24,7 @@ class MovieLensInstaller(Installer):
             # context.feedback(row.name)
             try:
                 Movie.create(id=movie.Index, name=movie.name.encode("utf-8"),
-                             url=str(movie.url))
+                             url=str(movie.url), genres=set(movie.genres[0]))
             except Exception as e:
                 print e, movie
         context.feedback("Movies done")
@@ -130,5 +130,5 @@ class MovieLensInstaller(Installer):
                 i = 0
                 total = time.time() - start
                 start = time.time()
-                print float(lim) / total, "per second"
+                print float(lim) / total, "edges per second"
 

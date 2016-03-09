@@ -2,7 +2,8 @@ CREATE TABLE movies (
     id int primary key,
     name text,
     url text,
-    genres set<text>
+    genres set<text>,
+    release_date date
 );
 
 CREATE TABLE users (

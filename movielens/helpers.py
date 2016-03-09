@@ -1,13 +1,20 @@
 from pandas import read_csv
 from zipfile import ZipFile
 
+movie_fields = [ "id", "name", "release_date", "video_release_date", "url", "unknown",
+                         "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
+                         "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
+                         "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
 def read_movies(zfp):
     fp = zfp.open("ml-100k/u.item")
-    return read_csv(fp, sep="|", header=None, index_col=0,
-                    names=[ "id", "name", "release_date", "video_release_date", "url", "unknown",
-                            "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
-                            "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
-                            "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"])
+
+
+    movies = read_csv(fp, sep="|", header=None, index_col=0,
+                    names=movie_fields).fillna(0)
+
+    movies['genres'] = movies.loc[:, 'unknown':'Western'].apply(lambda row: [row.index[row.astype('bool')]], axis=1)
+    return movies
+
 
 def read_users(zfp):
     fp = zfp.open("ml-100k/u.user")
