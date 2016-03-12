@@ -60,27 +60,12 @@ class MovieLensInstaller(Installer):
         session = self.context.session
         from dse.graph import SimpleGraphStatement
 
-        # schema = """import static com.datastax.bdp.graph.api.schema.VertexIndex.Type.MATERIALIZED
-        #             def schema = graph.schema()
-        #             schema.buildPropertyKey('id', Integer.class).add()
-        #
-        #             person = schema.buildVertexLabel('person').add()
-        #             person.buildVertexIndex('user_id').materialized().byPropertyKey('id').add()
-        #
-        #             movie = schema.buildVertexLabel('movie').add()
-        #             movie.buildVertexIndex('movie_id').materialized().byPropertyKey('id').add()
-        #
-        #             schema.buildPropertyKey('name', String.class).add()
-        #             movie.buildVertexIndex('search').search().byPropertyKey('name', fullTextIndex()).add()
-        #
-        #              """
-
         schema = ["CREATE VERTEX person",
                   "CREATE VERTEX movie",
                   "CREATE PROPERTY id int",
                   "CREATE PROPERTY name text",
                   "CREATE MATERIALIZED INDEX user_id on vertex person(id)",
-                  "CREATE MATERIALIZED INDEX movie_id on vertex person(id)"]
+                  "CREATE MATERIALIZED INDEX movie_id on vertex movie(id)"]
 
 
         for line in schema:
