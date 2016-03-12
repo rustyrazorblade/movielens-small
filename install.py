@@ -2,6 +2,7 @@ from zipfile import ZipFile
 from pandas import read_csv
 
 from cdm.installer import Installer
+from cdm.ddl import parse_line
 from movielens.models import Movie, User
 from movielens.helpers import read_movies, read_users, get_zip, read_ratings
 
@@ -59,22 +60,34 @@ class MovieLensInstaller(Installer):
         session = self.context.session
         from dse.graph import SimpleGraphStatement
 
-        schema = """import static com.datastax.bdp.graph.api.schema.VertexIndex.Type.MATERIALIZED
-                    def schema = graph.schema()
-                    schema.buildPropertyKey('id', Integer.class).add()
+        # schema = """import static com.datastax.bdp.graph.api.schema.VertexIndex.Type.MATERIALIZED
+        #             def schema = graph.schema()
+        #             schema.buildPropertyKey('id', Integer.class).add()
+        #
+        #             person = schema.buildVertexLabel('person').add()
+        #             person.buildVertexIndex('user_id').materialized().byPropertyKey('id').add()
+        #
+        #             movie = schema.buildVertexLabel('movie').add()
+        #             movie.buildVertexIndex('movie_id').materialized().byPropertyKey('id').add()
+        #
+        #             schema.buildPropertyKey('name', String.class).add()
+        #             movie.buildVertexIndex('search').search().byPropertyKey('name', fullTextIndex()).add()
+        #
+        #              """
 
-                    person = schema.buildVertexLabel('person').add()
-                    person.buildVertexIndex('user_id').materialized().byPropertyKey('id').add()
+        schema = ["CREATE VERTEX person",
+                  "CREATE VERTEX movie",
+                  "CREATE PROPERTY id int",
+                  "CREATE PROPERTY name text",
+                  "CREATE MATERIALIZED INDEX user_id on vertex person(id)",
+                  "CREATE MATERIALIZED INDEX movie_id on vertex person(id)"]
 
-                    movie = schema.buildVertexLabel('movie').add()
-                    movie.buildVertexIndex('movie_id').materialized().byPropertyKey('id').add()
 
-                    schema.buildPropertyKey('name', String.class).add()
-                    movie.buildVertexIndex('search').search().byPropertyKey('name', fullTextIndex()).add()
-
-                     """
-
-        session.execute_graph(schema)
+        for line in schema:
+            command = parse_line(line)
+            print str(command)
+            session.execute_graph(str(command))
+        # session.execute_graph(schema)
 
         self.context.feedback("Schema finished")
 
