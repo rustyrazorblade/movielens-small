@@ -83,14 +83,8 @@ class MovieLensInstaller(Installer):
         movie_stmt = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', name, 'id', movie_id)")
         person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender, 'id', user_id, 'name', name)")
 
-        rate = """ f = g.V().hasLabel('person').has('id', user_id).next()
-                   second = g.V().hasLabel('movie').has('id', movie_id).next()
-                   f.addEdge("rated", second, "rating", rating)
-        """
-        rate_stmt = SimpleGraphStatement(rate)
-
-        rate2 = """g.V().hasLabel('person').has('id', user_id).as('a').
-                  V().hasLabel('movie').has('id',movie_id).as('b').
+        rate2 = """g.V().has('person', 'id', user_id).as('a').
+                  V().has('movie', 'id',movie_id).as('b').
                   addE("rated").property('rating', rating).from("a").to("b")"""
 
         rate2_stmt = SimpleGraphStatement(rate2)
