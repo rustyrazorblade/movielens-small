@@ -22,7 +22,6 @@ def ratings(z):
 
 
 def test_movie_parsing(movies):
-    import ipdb; ipdb.set_trace()
     pass
 
 

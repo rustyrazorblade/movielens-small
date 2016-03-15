@@ -1,5 +1,7 @@
 from pandas import read_csv
 from zipfile import ZipFile
+from faker import Factory
+
 
 movie_fields = [ "id", "name", "release_date", "video_release_date", "url", "unknown",
                          "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
@@ -8,18 +10,44 @@ movie_fields = [ "id", "name", "release_date", "video_release_date", "url", "unk
 def read_movies(zfp):
     fp = zfp.open("ml-100k/u.item")
 
-
     movies = read_csv(fp, sep="|", header=None, index_col=0,
                     names=movie_fields).fillna(0)
 
     movies['genres'] = movies.loc[:, 'unknown':'Western'].apply(lambda row: [row.index[row.astype('bool')]], axis=1)
+
     return movies
 
 
 def read_users(zfp):
     fp = zfp.open("ml-100k/u.user")
-    return read_csv(fp, sep="|", header=None,
+    users = read_csv(fp, sep="|", header=None,
              names=["id", "age", "gender", "occupation", "zip"], index_col=0)
+
+    f = Factory.create()
+
+    names = ["Jon Haddad",
+             "Dani Traphagen",
+             "Patrick McFadin",
+             "Mark Quinsland",
+             "Brian Hess",
+             "Russell Spitzer",
+             "Lorina Poland",
+             "Tim Berglund",
+             "Tupshin Harper",
+             "Al Tobey"]
+
+    names.reverse()
+
+    def get_name(row):
+        if names:
+            return names.pop()
+        return f.name()
+
+    users['name'] = users.apply(get_name, axis=1)
+    users['city'] = users.apply(lambda row: f.city(), axis=1)
+    users['address'] = users.apply(lambda row: f.address(), axis=1)
+
+    return users
 
 
 def read_ratings(zfp):

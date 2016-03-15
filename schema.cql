@@ -8,6 +8,9 @@ CREATE TABLE movies (
 
 CREATE TABLE users (
     id int primary key,
+    name text,
+    city text,
+    address text,
     age int,
     gender text,
     occupation text,
