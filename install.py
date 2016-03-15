@@ -80,7 +80,7 @@ class MovieLensInstaller(Installer):
         self.context.feedback("Schema finished")
 
         movie_stmt = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', name, 'id', movie_id)")
-        person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender, 'id', user_id)")
+        person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender, 'id', user_id, 'name', name)")
 
         rate = """ f = g.V().hasLabel('person').has('id', user_id).next()
                    second = g.V().hasLabel('movie').has('id', movie_id).next()
@@ -109,7 +109,8 @@ class MovieLensInstaller(Installer):
             try:
                 args = {"age":user.age,
                         "gender": user.gender,
-                        "user_id": user.Index}
+                        "user_id": user.Index,
+                        "name": user.name}
                 session.execute_graph(person_stmt, args)
             except Exception as e:
                 print args, e
