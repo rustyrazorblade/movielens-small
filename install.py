@@ -32,7 +32,8 @@ class MovieLensInstaller(Installer):
         for user in self.users.itertuples():
             try:
                 User.create(id=user.Index, age=user.age, gender=user.gender,
-                            occupation=user.occupation, zip=user.zip)
+                            occupation=user.occupation, zip=user.zip,
+                            name=user.name, address=user.address, city=user.city)
             except Exception as e:
                 print user.Index, e
         context.feedback("users done")

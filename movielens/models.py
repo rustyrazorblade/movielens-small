@@ -8,6 +8,9 @@ class Movie(Model):
     release_date = Date()
     video_release_date = Date()
     url = Text()
+    name = Text()
+    city = Text()
+    address = Text()
     genres = Set(Text)
 
 class User(Model):
