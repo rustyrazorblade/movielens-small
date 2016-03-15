@@ -45,7 +45,7 @@ def read_users(zfp):
 
     users['name'] = users.apply(get_name, axis=1)
     users['city'] = users.apply(lambda row: f.city(), axis=1)
-    users['address'] = users.apply(lambda row: f.address(), axis=1)
+    users['address'] = users.apply(lambda row: f.street_address(), axis=1)
 
     return users
 
