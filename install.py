@@ -33,7 +33,7 @@ class MovieLensInstaller(Installer):
             try:
                 User.create(id=user.Index, age=user.age, gender=user.gender,
                             occupation=user.occupation, zip=user.zip,
-                            name=user.name, address=user.address, city=user.city)
+                            name=user.name)
             except Exception as e:
                 print user.Index, e
         context.feedback("users done")
