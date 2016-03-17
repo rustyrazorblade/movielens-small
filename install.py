@@ -3,7 +3,7 @@ from pandas import read_csv
 
 from cdm.installer import Installer
 from cdm.ddl import parse_line
-from movielens.models import Movie, User
+from movielens.models import Movie, User, RatingsByMovie, RatingsByUser
 from movielens.helpers import read_movies, read_users, get_zip, read_ratings
 
 
@@ -15,6 +15,9 @@ class MovieLensInstaller(Installer):
         self.movies = read_movies(zfp)
         self.users = read_users(zfp)
         self.ratings = read_ratings(zfp)
+
+    def cassandra_schema(self):
+        return [Movie, User, RatingsByMovie, RatingsByUser]
 
 
     def install_cassandra(self):
