@@ -1,3 +1,5 @@
+import logging
+
 from zipfile import ZipFile
 from pandas import read_csv
 
@@ -111,7 +113,7 @@ class MovieLensInstaller(Installer):
                         "name": user.name}
                 session.execute_graph(person_stmt, args)
             except Exception as e:
-                print args, e
+                logging.warn("%s %s", args, e)
             i += 1
             if i % 100 == 0:
                 print i

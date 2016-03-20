@@ -15,7 +15,7 @@ def read_movies(zfp):
 
     movies['genres'] = movies.loc[:, 'unknown':'Western'].apply(lambda row: [row.index[row.astype('bool')]], axis=1)
 
-    return movies
+    return movies[["name", "release_date", "video_release_date", "url", "genres"]]
 
 
 def read_users(zfp):
