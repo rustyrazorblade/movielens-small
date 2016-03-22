@@ -8,8 +8,9 @@ class Movie(Model):
     release_date = Date()
     video_release_date = Date()
     url = Text()
-
+    avg_rating = Float()
     genres = Set(Text)
+
 
 class User(Model):
     __table_name__ = "users"
@@ -21,6 +22,7 @@ class User(Model):
     name = Text()
     city = Text()
     address = Text()
+    
 
 class RatingsByMovie(Model):
     movie_id = Integer(primary_key=True)
