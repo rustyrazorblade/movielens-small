@@ -22,7 +22,7 @@ class User(Model):
     name = Text()
     city = Text()
     address = Text()
-    
+
 
 class RatingsByMovie(Model):
     movie_id = Integer(primary_key=True)
