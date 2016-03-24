@@ -4,7 +4,7 @@ from zipfile import ZipFile
 from pandas import read_csv
 
 from cdm.installer import Installer
-from cdm.ddl import parse_line
+from firehawk import parse_line
 from movielens.models import Movie, User, RatingsByMovie, RatingsByUser
 from movielens.helpers import read_movies, read_users, get_zip, read_ratings
 
