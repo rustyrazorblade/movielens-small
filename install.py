@@ -72,7 +72,8 @@ class MovieLensInstaller(Installer):
                   "CREATE PROPERTY rating int",
                   "CREATE MATERIALIZED INDEX user_id on vertex person(id)",
                   "CREATE MATERIALIZED INDEX movie_id on vertex movie(id)",
-                  "CREATE OUT INDEX rating_idx ON VERTEX person ON EDGE rated(rating)"]
+                  #"CREATE OUT INDEX rating_idx ON VERTEX person ON EDGE rated(rating)",
+                    ]
 
         return [parse_line(s) for s in schema]
 
