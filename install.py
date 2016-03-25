@@ -61,11 +61,9 @@ class MovieLensInstaller(Installer):
                 future.result()
                 context.feedback("{} ratings processed".format(i))
 
-    def install_graph(self):
-        # create movies
-        session = self.context.session
-        from dse.graph import SimpleGraphStatement
 
+    def graph_schema(self):
+        from firehawk import parse_line
         schema = ["CREATE VERTEX person",
                   "CREATE VERTEX movie",
                   "CREATE EDGE rated",
@@ -76,14 +74,13 @@ class MovieLensInstaller(Installer):
                   "CREATE MATERIALIZED INDEX movie_id on vertex movie(id)",
                   "CREATE OUT INDEX rating_idx ON VERTEX person ON EDGE rated(rating)"]
 
+        return [str(parse_line(s)) for s in schema]
 
-        for line in schema:
-            command = parse_line(line)
-            print str(command)
-            session.execute_graph(str(command))
-        # session.execute_graph(schema)
 
-        self.context.feedback("Schema finished")
+    def install_graph(self):
+        # create movies
+        session = self.context.session
+        from dse.graph import SimpleGraphStatement
 
         movie_stmt = SimpleGraphStatement("graph.addVertex(label, 'movie', 'name', name, 'id', movie_id)")
         person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender, 'id', user_id, 'name', name)")
