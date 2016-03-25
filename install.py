@@ -74,7 +74,7 @@ class MovieLensInstaller(Installer):
                   "CREATE MATERIALIZED INDEX movie_id on vertex movie(id)",
                   "CREATE OUT INDEX rating_idx ON VERTEX person ON EDGE rated(rating)"]
 
-        return [str(parse_line(s)) for s in schema]
+        return [parse_line(s) for s in schema]
 
 
     def install_graph(self):
