@@ -5,7 +5,7 @@ from pandas import read_csv
 
 from cdm.installer import Installer
 from firehawk import parse_line
-from movielens.models import Movie, User, RatingsByMovie, RatingsByUser
+from movielens.models import *
 from movielens.helpers import read_movies, read_users, get_zip, read_ratings
 
 
@@ -19,7 +19,7 @@ class MovieLensInstaller(Installer):
         self.ratings = read_ratings(zfp)
 
     def cassandra_schema(self):
-        return [Movie, User, RatingsByMovie, RatingsByUser]
+        return [Movie, User, RatingsByMovie, RatingsByUser, OriginalMovieMap]
 
 
     def install_cassandra(self):
@@ -29,14 +29,14 @@ class MovieLensInstaller(Installer):
         for movie in self.movies.itertuples():
             # context.feedback(row.name)
             try:
-                Movie.create(id=movie.Index, name=movie.name.encode("utf-8"),
+                Movie.create(id=movie.uuid, name=movie.name.encode("utf-8"),
                              url=str(movie.url), genres=set(movie.genres[0]))
             except Exception as e:
                 print e, movie
         context.feedback("Movies done")
         for user in self.users.itertuples():
             try:
-                User.create(id=user.Index, age=user.age, gender=user.gender,
+                User.create(id=user.uuid, age=user.age, gender=user.gender,
                             occupation=user.occupation, zip=user.zip,
                             name=user.name, address=user.address, city=user.city)
             except Exception as e:
@@ -49,12 +49,16 @@ class MovieLensInstaller(Installer):
 
         i = 0
         for row in self.ratings.itertuples():
-            context.session.execute_async(prepared, (row.movie_id, row.user_id, row.rating, row.timestamp))
             try:
-                movie_name = self.movies.iloc[row.movie_id]["name"]
-                future = context.session.execute_async(prepared2, (row.user_id, row.movie_id, movie_name, row.rating, row.timestamp))
+                movie_id = self.movies.iloc[row.movie_id]["uuid"]
+                user_id = self.users.iloc[row.user_id]["uuid"]
             except IndexError:
                 print "Could not find movie, probably an encoding issue from earlier, movie: ", row.movie_id
+                continue
+
+            context.session.execute_async(prepared, (movie_id, user_id, row.rating, row.timestamp))
+            movie_name = self.movies.iloc[row.movie_id]["name"]
+            future = context.session.execute_async(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
 
             i += 1
             if i % 2500 == 0:

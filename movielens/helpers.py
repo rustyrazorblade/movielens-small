@@ -1,7 +1,7 @@
 from pandas import read_csv
 from zipfile import ZipFile
 from faker import Factory
-
+import uuid
 
 movie_fields = [ "id", "name", "release_date", "video_release_date", "url", "unknown",
                          "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
@@ -14,15 +14,14 @@ def read_movies(zfp):
                     names=movie_fields).fillna(0)
 
     movies['genres'] = movies.loc[:, 'unknown':'Western'].apply(lambda row: [row.index[row.astype('bool')]], axis=1)
-
-    return movies[["name", "release_date", "video_release_date", "url", "genres"]]
+    movies['uuid'] = movies.apply(lambda _: uuid.uuid4(), axis=1)
+    return movies[["name", "release_date", "video_release_date", "url", "genres", "uuid"]]
 
 
 def read_users(zfp):
     fp = zfp.open("ml-100k/u.user")
     users = read_csv(fp, sep="|", header=None,
              names=["id", "age", "gender", "occupation", "zip"], index_col=0)
-
     f = Factory.create()
 
     names = ["Jon Haddad",
@@ -46,7 +45,7 @@ def read_users(zfp):
     users['name'] = users.apply(get_name, axis=1)
     users['city'] = users.apply(lambda row: f.city(), axis=1)
     users['address'] = users.apply(lambda row: f.street_address(), axis=1)
-
+    users['uuid'] = users.apply(lambda _: uuid.uuid4(), axis=1)
 
     return users
 

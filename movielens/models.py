@@ -3,7 +3,7 @@ from cassandra.cqlengine.columns import *
 
 class Movie(Model):
     __table_name__ = 'movies'
-    id = Integer(primary_key=True)
+    id = UUID(primary_key=True)
     name = Text()
     release_date = Date()
     video_release_date = Date()
@@ -14,7 +14,7 @@ class Movie(Model):
 
 class User(Model):
     __table_name__ = "users"
-    id = Integer(primary_key=True)
+    id = UUID(primary_key=True)
     age = Integer()
     gender = Text()
     occupation = Text()
@@ -25,18 +25,24 @@ class User(Model):
 
 
 class RatingsByMovie(Model):
-    movie_id = Integer(primary_key=True)
-    user_id = Integer(primary_key=True)
+    movie_id = UUID(primary_key=True)
+    user_id = UUID(primary_key=True)
     rating = Integer()
     ts = Integer()
 
 
 class RatingsByUser(Model):
-    user_id = Integer(primary_key=True)
-    movie_id = Integer(primary_key=True)
+    user_id = UUID(primary_key=True)
+    movie_id = UUID(primary_key=True)
     name = Text()
     rating = Integer()
     ts = Integer()
+
+class OriginalMovieMap(Model):
+    original_movie_id = Integer(primary_key=True)
+    movie_id = UUID()
+
+
 
 # CREATE TABLE ratings_by_movie (
 #         movie_id int,
