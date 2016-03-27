@@ -3,7 +3,7 @@ import logging
 from zipfile import ZipFile
 from pandas import read_csv
 
-from cdm.installer import Installer
+from cdm.installer import Installer, AutoGenerateSolrResources
 from firehawk import parse_line
 from movielens.models import *
 from movielens.helpers import read_movies, read_users, get_zip, read_ratings
@@ -21,6 +21,8 @@ class MovieLensInstaller(Installer):
     def cassandra_schema(self):
         return [Movie, User, RatingsByMovie, RatingsByUser, OriginalMovieMap]
 
+    def search_schema(self):
+        return [AutoGenerateSolrResources(table="movies")]
 
     def install_cassandra(self):
         context = self.context
@@ -71,7 +73,7 @@ class MovieLensInstaller(Installer):
         schema = ["CREATE VERTEX person",
                   "CREATE VERTEX movie",
                   "CREATE EDGE rated",
-                  "CREATE PROPERTY id int",
+                  "CREATE PROPERTY id uuid",
                   "CREATE PROPERTY name text",
                   "CREATE PROPERTY rating int",
                   "CREATE MATERIALIZED INDEX user_id on vertex person(id)",
@@ -91,7 +93,7 @@ class MovieLensInstaller(Installer):
         person_stmt = SimpleGraphStatement("graph.addVertex(label, 'person', 'age', age, 'gender', gender, 'id', user_id, 'name', name)")
 
         rate2 = """g.V().has('person', 'id', user_id).as('a').
-                  V().has('movie', 'id',movie_id).as('b').
+                  V().has('movie', 'id', movie_id).as('b').
                   addE("rated").property('rating', rating).from("a").to("b")"""
 
         rate2_stmt = SimpleGraphStatement(rate2)
@@ -99,10 +101,11 @@ class MovieLensInstaller(Installer):
         for movie in self.movies.itertuples():
             try:
                 params = {"name": movie.name,
-                          "movie_id": movie.Index}
+                          "movie_id": str(movie.uuid)}
 
                 session.execute_graph(movie_stmt, params)
             except Exception as e:
+                import ipdb; ipdb.set_trace()
                 print e, movie
 
 
@@ -111,10 +114,11 @@ class MovieLensInstaller(Installer):
             try:
                 args = {"age":user.age,
                         "gender": user.gender,
-                        "user_id": user.Index,
+                        "user_id": str(user.uuid),
                         "name": user.name}
                 session.execute_graph(person_stmt, args)
             except Exception as e:
+                import ipdb; ipdb.set_trace()
                 logging.warn("%s %s", args, e)
             i += 1
             if i % 100 == 0:
@@ -126,12 +130,16 @@ class MovieLensInstaller(Installer):
         start = time.time()
         for rating in self.ratings.itertuples():
 
-            params = {"user_id": rating.user_id,
-                      "movie_id": rating.movie_id,
-                      "rating": rating.rating}
             try:
+                user_id = str(self.users.iloc[rating.user_id].uuid)
+                movie_id = str(self.movies.iloc[rating.movie_id].uuid)
+                params = {"user_id": user_id,
+                          "movie_id": movie_id,
+                          "rating": rating.rating}
+
                 session.execute_graph(rate2_stmt, params)
             except Exception as e:
+                import ipdb; ipdb.set_trace()
                 print params, e
             i += 1
             if i == lim:
