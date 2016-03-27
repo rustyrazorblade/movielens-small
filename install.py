@@ -105,7 +105,6 @@ class MovieLensInstaller(Installer):
 
                 session.execute_graph(movie_stmt, params)
             except Exception as e:
-                import ipdb; ipdb.set_trace()
                 print e, movie
 
 
@@ -118,7 +117,6 @@ class MovieLensInstaller(Installer):
                         "name": user.name}
                 session.execute_graph(person_stmt, args)
             except Exception as e:
-                import ipdb; ipdb.set_trace()
                 logging.warn("%s %s", args, e)
             i += 1
             if i % 100 == 0:
@@ -139,7 +137,6 @@ class MovieLensInstaller(Installer):
 
                 session.execute_graph(rate2_stmt, params)
             except Exception as e:
-                import ipdb; ipdb.set_trace()
                 print params, e
             i += 1
             if i == lim:
