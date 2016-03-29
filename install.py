@@ -26,24 +26,24 @@ class MovieLensInstaller(Installer):
 
     def install_cassandra(self):
         context = self.context
-        context.feedback("Installing movielens")
+        logging.info("Installing movielens")
 
         for movie in self.movies.itertuples():
-            # context.feedback(row.name)
+            # logging.info(row.name)
             try:
-                Movie.create(id=movie.uuid, name=movie.name.encode("utf-8"),
+                Movie.create(id=movie.uuid, name=movie.name,
                              url=str(movie.url), genres=set(movie.genres[0]))
             except Exception as e:
-                print e, movie
-        context.feedback("Movies done")
+                import ipdb; ipdb.set_trace()
+
+        logging.info("Movies done")
+
         for user in self.users.itertuples():
-            try:
-                User.create(id=user.uuid, age=user.age, gender=user.gender,
-                            occupation=user.occupation, zip=user.zip,
-                            name=user.name, address=user.address, city=user.city)
-            except Exception as e:
-                print user.Index, e
-        context.feedback("users done")
+            User.create(id=user.uuid, age=user.age, gender=user.gender,
+                        occupation=user.occupation, zip=user.zip,
+                        name=user.name, address=user.address, city=user.city)
+
+        logging.info("users done")
 
         # user id | item id | rating | timestamp
         prepared = context.session.prepare("INSERT INTO ratings_by_movie (movie_id, user_id, rating, ts) VALUES (?, ?, ?, ?)")
@@ -51,12 +51,8 @@ class MovieLensInstaller(Installer):
 
         i = 0
         for row in self.ratings.itertuples():
-            try:
-                movie_id = self.movies.iloc[row.movie_id]["uuid"]
-                user_id = self.users.iloc[row.user_id]["uuid"]
-            except IndexError:
-                print "Could not find movie, probably an encoding issue from earlier, movie: ", row.movie_id
-                continue
+            movie_id = self.movies.iloc[row.movie_id]["uuid"]
+            user_id = self.users.iloc[row.user_id]["uuid"]
 
             context.session.execute_async(prepared, (movie_id, user_id, row.rating, row.timestamp))
             movie_name = self.movies.iloc[row.movie_id]["name"]
@@ -65,7 +61,7 @@ class MovieLensInstaller(Installer):
             i += 1
             if i % 2500 == 0:
                 future.result()
-                context.feedback("{} ratings processed".format(i))
+                logging.info("{} ratings processed".format(i))
 
 
     def graph_schema(self):
