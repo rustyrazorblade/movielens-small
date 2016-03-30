@@ -30,11 +30,8 @@ class MovieLensInstaller(Installer):
 
         for movie in self.movies.itertuples():
             # logging.info(row.name)
-            try:
-                Movie.create(id=movie.uuid, name=movie.name,
-                             url=str(movie.url), genres=set(movie.genres[0]))
-            except Exception as e:
-                import ipdb; ipdb.set_trace()
+            Movie.create(id=movie.uuid, name=movie.name,
+                         url=str(movie.url), genres=set(movie.genres[0]))
 
         logging.info("Movies done")
 
@@ -51,17 +48,21 @@ class MovieLensInstaller(Installer):
 
         i = 0
         for row in self.ratings.itertuples():
-            movie_id = self.movies.iloc[row.movie_id]["uuid"]
-            user_id = self.users.iloc[row.user_id]["uuid"]
+            try:
+                movie_id = self.movies.iloc[row.movie_id]["uuid"]
+                user_id = self.users.iloc[row.user_id]["uuid"]
 
-            context.session.execute_async(prepared, (movie_id, user_id, row.rating, row.timestamp))
-            movie_name = self.movies.iloc[row.movie_id]["name"]
-            future = context.session.execute_async(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
+                context.session.execute_async(prepared, (movie_id, user_id, row.rating, row.timestamp))
+                movie_name = self.movies.iloc[row.movie_id]["name"]
+                future = context.session.execute_async(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
 
-            i += 1
-            if i % 2500 == 0:
-                future.result()
-                logging.info("{} ratings processed".format(i))
+                i += 1
+                if i % 2500 == 0:
+                    future.result()
+                    logging.info("{} ratings processed".format(i))
+            except Exception as e:
+                print e
+
 
 
     def graph_schema(self):
