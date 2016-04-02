@@ -7,9 +7,7 @@ movie_fields = [ "id", "name", "release_date", "video_release_date", "url", "unk
                          "Action", "Adventure", "Animation", "Children's", "Comedy", "Crime",
                          "Documentary", "Drama", "Fantasy", "Film-Noir", "Horror",  "Musical",
                          "Mystery", "Romance", "Sci-Fi", "Thriller", "War", "Western"]
-def read_movies(zfp):
-    fp = zfp.open("ml-100k/u.item")
-
+def read_movies(fp):
     movies = read_csv(fp, sep="|", header=None, index_col=0, names=movie_fields, encoding="latin_1").fillna(0)
 
     movies['genres'] = movies.loc[:, 'unknown':'Western'].apply(lambda row: [row.index[row.astype('bool')]], axis=1)

@@ -1,6 +1,8 @@
 import logging
 
 from zipfile import ZipFile
+
+import time
 from pandas import read_csv
 
 from cdm.installer import Installer, AutoGenerateSolrResources
@@ -14,7 +16,7 @@ class MovieLensInstaller(Installer):
         context = self.context
 
         zfp = get_zip(context)
-        self.movies = read_movies(zfp)
+        self.movies = read_movies(zfp.open("ml-100k/u.item"))
         self.users = read_users(zfp)
         self.ratings = read_ratings(zfp)
 
@@ -47,22 +49,21 @@ class MovieLensInstaller(Installer):
         prepared2 = context.session.prepare("INSERT INTO ratings_by_user (user_id, movie_id, name, rating, ts) VALUES (?, ?, ?, ?, ?)")
 
         i = 0
+        start = time.time()
+
         for row in self.ratings.itertuples():
-            try:
-                movie_id = self.movies.iloc[row.movie_id]["uuid"]
-                user_id = self.users.iloc[row.user_id]["uuid"]
+            movie_id = self.movies.ix[row.movie_id]["uuid"]
+            user_id = self.users.ix[row.user_id]["uuid"]
 
-                context.session.execute_async(prepared, (movie_id, user_id, row.rating, row.timestamp))
-                movie_name = self.movies.iloc[row.movie_id]["name"]
-                future = context.session.execute_async(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
+            context.session.execute_async(prepared, (movie_id, user_id, row.rating, row.timestamp))
+            movie_name = self.movies.ix[row.movie_id]["name"]
+            future = context.session.execute_async(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
 
-                i += 1
-                if i % 2500 == 0:
-                    future.result()
-                    logging.info("{} ratings processed".format(i))
-            except Exception as e:
-                print e
-
+            i += 1
+            if i % 5000 == 0:
+                future.result()
+                rate = float(i) / (time.time() - start)
+                logging.info("{} ratings processed, {} per sec".format(i, rate))
 
 
     def graph_schema(self):
@@ -126,8 +127,8 @@ class MovieLensInstaller(Installer):
         for rating in self.ratings.itertuples():
 
             try:
-                user_id = str(self.users.iloc[rating.user_id].uuid)
-                movie_id = str(self.movies.iloc[rating.movie_id].uuid)
+                user_id = str(self.users.ix[rating.user_id].uuid)
+                movie_id = str(self.movies.ix[rating.movie_id].uuid)
                 params = {"user_id": user_id,
                           "movie_id": movie_id,
                           "rating": rating.rating}
