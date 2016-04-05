@@ -1,15 +1,9 @@
-import logging
-
-from zipfile import ZipFile
-
 import time
-from pandas import read_csv
 
+from gevent.pool import Pool
 from cdm.installer import Installer, AutoGenerateSolrResources
-from firehawk import parse_line
 from movielens.models import *
 from movielens.helpers import read_movies, read_users, get_zip, read_ratings
-
 
 class MovieLensInstaller(Installer):
     def post_init(self):
@@ -30,10 +24,15 @@ class MovieLensInstaller(Installer):
         context = self.context
         logging.info("Installing movielens")
 
+        self.movies["avg_rating"] = self.ratings.groupby("movie_id")["rating"].mean()
+
+
         for movie in self.movies.itertuples():
             # logging.info(row.name)
             Movie.create(id=movie.uuid, name=movie.name,
-                         url=str(movie.url), genres=set(movie.genres[0]))
+                         url=str(movie.url),
+                         genres=set(movie.genres[0]),
+                         avg_rating=movie.avg_rating)
 
         logging.info("Movies done")
 
@@ -50,6 +49,7 @@ class MovieLensInstaller(Installer):
 
         i = 0
         start = time.time()
+
 
         for row in self.ratings.itertuples():
             movie_id = self.movies.ix[row.movie_id]["uuid"]
