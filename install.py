@@ -4,6 +4,8 @@ from gevent.pool import Pool
 from cdm.installer import Installer, AutoGenerateSolrResources
 from movielens.models import *
 from movielens.helpers import read_movies, read_users, get_zip, read_ratings
+from gevent.monkey import patch_all
+import progressbar
 
 class MovieLensInstaller(Installer):
     def post_init(self):
@@ -26,7 +28,6 @@ class MovieLensInstaller(Installer):
 
         self.movies["avg_rating"] = self.ratings.groupby("movie_id")["rating"].mean()
 
-
         for movie in self.movies.itertuples():
             # logging.info(row.name)
             Movie.create(id=movie.uuid, name=movie.name,
@@ -44,26 +45,30 @@ class MovieLensInstaller(Installer):
         logging.info("users done")
 
         # user id | item id | rating | timestamp
-        prepared = context.session.prepare("INSERT INTO ratings_by_movie (movie_id, user_id, rating, ts) VALUES (?, ?, ?, ?)")
-        prepared2 = context.session.prepare("INSERT INTO ratings_by_user (user_id, movie_id, name, rating, ts) VALUES (?, ?, ?, ?, ?)")
+        # tmp = "INSERT INTO ratings_by_movie (movie_id, user_id, rating, ts) VALUES (?, ?, ?, ?)"
+        # prepared = context.session.prepare(tmp)
+        prepared = context.prepare("ratings_by_movie",
+                                   ["movie_id", "user_id", "rating", "ts"])
 
-        i = 0
-        start = time.time()
+        prepared2 = context.prepare("ratings_by_user",
+                                    ["user_id", "movie_id", "name", "rating", "ts"])
 
+        pool = Pool(100)
 
-        for row in self.ratings.itertuples():
+        def insert_ratings(row):
             movie_id = self.movies.ix[row.movie_id]["uuid"]
             user_id = self.users.ix[row.user_id]["uuid"]
 
-            context.session.execute_async(prepared, (movie_id, user_id, row.rating, row.timestamp))
+            context.session.execute(prepared, (movie_id, user_id, row.rating, row.timestamp))
             movie_name = self.movies.ix[row.movie_id]["name"]
-            future = context.session.execute_async(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
+            future = context.session.execute(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
 
-            i += 1
-            if i % 5000 == 0:
-                future.result()
-                rate = float(i) / (time.time() - start)
-                logging.info("{} ratings processed, {} per sec".format(i, rate))
+        i = 0
+        with progressbar.ProgressBar(max_value=len(self.ratings)) as bar:
+            for tmp in pool.imap_unordered(insert_ratings, self.ratings.itertuples()):
+                i += 1
+                if i % 10 == 0:
+                    bar.update(i)
 
 
     def graph_schema(self):
