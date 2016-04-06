@@ -24,18 +24,12 @@ class MovieLensInstaller(Installer):
 
     def install_cassandra(self):
         context = self.context
-        logging.info("Installing movielens")
 
         self.movies["avg_rating"] = self.ratings.groupby("movie_id")["rating"].mean()
 
         def m(movie):
-            result = {}
-            result['id'] = movie['uuid']
-            result['name'] = movie['name']
-            result['url'] = str(movie['url'])
-            result['genres'] = movie['genres'][0]
-            result['avg_rating'] = movie['avg_rating']
-            return result
+            return {"id": movie['uuid'], "name": movie['name'], "url": str(movie['url']), "genres": movie['genres'][0],
+                    "avg_rating": movie['avg_rating']}
 
         context.save_dataframe_to_cassandra(self.movies, "movies", m)
 
@@ -45,31 +39,22 @@ class MovieLensInstaller(Installer):
 
         context.save_dataframe_to_cassandra(self.users, "users", u)
 
-
-        prepared = context.prepare("ratings_by_movie",
-                                   ["movie_id", "user_id", "rating", "ts"])
-
-        prepared2 = context.prepare("ratings_by_user",
-                                    ["user_id", "movie_id", "name", "rating", "ts"])
-
-        pool = Pool(100)
         ratings = self.ratings.merge(self.movies[["uuid", "name"]], left_on="movie_id", right_index=True)
         ratings = ratings.merge(self.users[['uuid']], left_on="user_id", right_index=True, suffixes=("_movie", "_user"))
 
-        def insert_ratings(row):
-            movie_id = row.uuid_movie
-            user_id = row.uuid_user
-            movie_name = row.name
+        # import ipdb; ipdb.set_trace()
+        context.save_dataframe_to_cassandra(ratings, "ratings_by_movie",
+                                            lambda row: {"movie_id": row["uuid_movie"],
+                                                         "user_id": row["uuid_user"],
+                                                         "rating": row["rating"],
+                                                         "ts": row['timestamp']})
 
-            context.session.execute(prepared, (movie_id, user_id, row.rating, row.timestamp))
-            future = context.session.execute(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
-
-        i = 0
-        with progressbar.ProgressBar(max_value=len(self.ratings)) as bar:
-            for tmp in pool.imap_unordered(insert_ratings, ratings.itertuples()):
-                i += 1
-                if i % 10 == 0:
-                    bar.update(i)
+        context.save_dataframe_to_cassandra(ratings, "ratings_by_user",
+                                            lambda row: {"movie_id": row["uuid_movie"],
+                                                         "user_id": row["uuid_user"],
+                                                         "rating": row["rating"],
+                                                         "ts": row['timestamp'],
+                                                         "name": row['name']})
 
 
     def graph_schema(self):
