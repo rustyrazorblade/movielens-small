@@ -37,23 +37,15 @@ class MovieLensInstaller(Installer):
             result['avg_rating'] = movie['avg_rating']
             return result
 
-            # return {"id":movie.uuid, "name":movie, "url":movie.url,
-            #         "genres":movie.genres[0], "avg_rating":movie.avg_rating}
-
         context.save_dataframe_to_cassandra(self.movies, "movies", m)
 
-        logging.info("Movies done")
+        def u(user):
+            return {"id": user["uuid"], "age": user['age'], 'gender': user['gender'], 'occupation': user['occupation'],
+                    'zip': user['zip'], 'name': user['name'], 'address': user['address'], 'city': user['city']}
 
-        for user in self.users.itertuples():
-            User.create(id=user.uuid, age=user.age, gender=user.gender,
-                        occupation=user.occupation, zip=user.zip,
-                        name=user.name, address=user.address, city=user.city)
+        context.save_dataframe_to_cassandra(self.users, "users", u)
 
-        logging.info("users done")
 
-        # user id | item id | rating | timestamp
-        # tmp = "INSERT INTO ratings_by_movie (movie_id, user_id, rating, ts) VALUES (?, ?, ?, ?)"
-        # prepared = context.session.prepare(tmp)
         prepared = context.prepare("ratings_by_movie",
                                    ["movie_id", "user_id", "rating", "ts"])
 
