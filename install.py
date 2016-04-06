@@ -28,12 +28,19 @@ class MovieLensInstaller(Installer):
 
         self.movies["avg_rating"] = self.ratings.groupby("movie_id")["rating"].mean()
 
-        for movie in self.movies.itertuples():
-            # logging.info(row.name)
-            Movie.create(id=movie.uuid, name=movie.name,
-                         url=str(movie.url),
-                         genres=set(movie.genres[0]),
-                         avg_rating=movie.avg_rating)
+        def m(movie):
+            result = {}
+            result['id'] = movie['uuid']
+            result['name'] = movie['name']
+            result['url'] = str(movie['url'])
+            result['genres'] = movie['genres'][0]
+            result['avg_rating'] = movie['avg_rating']
+            return result
+
+            # return {"id":movie.uuid, "name":movie, "url":movie.url,
+            #         "genres":movie.genres[0], "avg_rating":movie.avg_rating}
+
+        context.save_dataframe_to_cassandra(self.movies, "movies", m)
 
         logging.info("Movies done")
 
@@ -54,18 +61,20 @@ class MovieLensInstaller(Installer):
                                     ["user_id", "movie_id", "name", "rating", "ts"])
 
         pool = Pool(100)
+        ratings = self.ratings.merge(self.movies[["uuid", "name"]], left_on="movie_id", right_index=True)
+        ratings = ratings.merge(self.users[['uuid']], left_on="user_id", right_index=True, suffixes=("_movie", "_user"))
 
         def insert_ratings(row):
-            movie_id = self.movies.ix[row.movie_id]["uuid"]
-            user_id = self.users.ix[row.user_id]["uuid"]
+            movie_id = row.uuid_movie
+            user_id = row.uuid_user
+            movie_name = row.name
 
             context.session.execute(prepared, (movie_id, user_id, row.rating, row.timestamp))
-            movie_name = self.movies.ix[row.movie_id]["name"]
             future = context.session.execute(prepared2, (user_id, movie_id, movie_name, row.rating, row.timestamp))
 
         i = 0
         with progressbar.ProgressBar(max_value=len(self.ratings)) as bar:
-            for tmp in pool.imap_unordered(insert_ratings, self.ratings.itertuples()):
+            for tmp in pool.imap_unordered(insert_ratings, ratings.itertuples()):
                 i += 1
                 if i % 10 == 0:
                     bar.update(i)
