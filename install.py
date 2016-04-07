@@ -44,16 +44,12 @@ class MovieLensInstaller(Installer):
 
         # import ipdb; ipdb.set_trace()
         context.save_dataframe_to_cassandra(ratings, "ratings_by_movie",
-                                            lambda row: {"movie_id": row["uuid_movie"],
-                                                         "user_id": row["uuid_user"],
-                                                         "rating": row["rating"],
-                                                         "ts": row['timestamp']})
+                                            lambda row: {"movie_id": row["uuid_movie"], "user_id": row["uuid_user"],
+                                                         "rating": row["rating"], "ts": row['timestamp']})
 
         context.save_dataframe_to_cassandra(ratings, "ratings_by_user",
-                                            lambda row: {"movie_id": row["uuid_movie"],
-                                                         "user_id": row["uuid_user"],
-                                                         "rating": row["rating"],
-                                                         "ts": row['timestamp'],
+                                            lambda row: {"movie_id": row["uuid_movie"], "user_id": row["uuid_user"],
+                                                         "rating": row["rating"], "ts": row['timestamp'],
                                                          "name": row['name']})
 
 
